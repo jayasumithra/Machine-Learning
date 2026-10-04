@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Explainable AI (Grad-CAM) | AI TB Screening{% endblock %}
+{% block header_title %}Explainable AI: Gradient-Weighted Class Activation Mapping (Grad-CAM){% endblock %}
+
+{% block content %}
+<!-- Grad-CAM Theory Card -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-eye" style="color: var(--primary);"></i>
+        How Grad-CAM Works in Chest Radiography Screening
+    </div>
+    <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; font-size: 13px; color: var(--text-muted); line-height: 1.8;">
+        Deep neural networks are often described as "black-box" models. <strong>Grad-CAM (Gradient-weighted Class Activation Mapping)</strong> produces visual explanations by computing gradients of the target screening class score with respect to the feature maps of the final convolutional layer (<code>top_conv</code> in EfficientNetB0):
+        <ul style="margin-left: 20px; margin-top: 8px;">
+            <li><strong>Gradients:</strong> Computed via <code>tf.GradientTape</code> to quantify each feature map's contribution to the prediction.</li>
+            <li><strong>Guided Global Pooling:</strong> Averages spatial gradients into importance weights \(\alpha_k^c\).</li>
+            <li><strong>Linear Combination & ReLU:</strong> Sums weighted feature maps and applies Rectified Linear Activation to isolate features that positively endorse the screening target.</li>
+            <li><strong>Overlay:</strong> Scaled up and superimposed onto the original radiograph using a Jet colormap.</li>
+        </ul>
+    </div>
+</div>
+
+{% if gradcam %}
+<!-- 3-Panel Visual Comparison Grid -->
+<div class="comparison-grid">
+    <!-- 1. Original X-Ray -->
+    <div class="image-panel">
+        <h5>1. Original Chest Radiograph</h5>
+        <img src="{{ gradcam.original_image_url }}" alt="Original Radiograph">
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+            Standardized 224&times;224 RGB Input
+        </div>
+    </div>
+
+    <!-- 2. Pure Grad-CAM Heatmap -->
+    <div class="image-panel">
+        <h5>2. Grad-CAM Activation Heatmap</h5>
+        <img src="{{ gradcam.heatmap_image_url }}" alt="Grad-CAM Heatmap">
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+            Target Layer: <code style="color: #00d2ff;">{{ gradcam.target_conv_layer }}</code>
+        </div>
+    </div>
+
+    <!-- 3. Blended Overlay -->
+    <div class="image-panel" style="border-color: var(--primary);">
+        <h5 style="color: #00d2ff;">3. Blended Attention Overlay</h5>
+        <img src="{{ gradcam.overlay_image_url }}" alt="Grad-CAM Overlay">
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+            Translucent Jet Map (&alpha; = 0.40)
+        </div>
+    </div>
+</div>
+
+<!-- Anatomical Focus & Telemetry -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Anatomical Interpretation Card -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-lungs" style="color: var(--success);"></i>
+            Anatomical Localization & Attention Focus
+        </div>
+
+        <table class="custom-table">
+            <tbody>
+                {% if gradcam.predicted_class %}
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Screening Outcome</td>
+                    <td>
+                        <strong style="color: {% if gradcam.predicted_class == 'TB' %}var(--danger){% else %}var(--success){% endif %};">
+                            {{ gradcam.predicted_class }} ({{ gradcam.tb_probability }}% TB Prob)
+                        </strong>
+                    </td>
+                </tr>
+                {% endif %}
+                {% if gradcam.anatomical_focus %}
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Primary Attention Zone</td>
+                    <td style="color: #00d2ff; font-weight: bold;">{{ gradcam.anatomical_focus }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Feature Layer</td>
+                    <td>{{ gradcam.target_conv_layer }}</td>
+                </tr>
+                {% if gradcam.peak_activation_score %}
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Peak Activation Score</td>
+                    <td>{{ gradcam.peak_activation_score }} (Max Normalized: 1.0)</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Clinical Context & Safety Warning Card -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-shield-heart" style="color: var(--danger);"></i>
+            Clinical Meaning & Diagnostic Distinction
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;">
+            {{ gradcam.explanation }}
+        </p>
+        <div style="padding: 12px; background: rgba(255, 71, 87, 0.08); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: var(--radius-sm); font-size: 12px; color: #ff9f9f;">
+            <strong>Important Safety Caveat:</strong> High activation in apical or infiltrative lung zones represents mathematical attention in the neural network's receptive field. It does not replace sputum culture, GeneXpert MTB/RIF molecular assays, or board-certified radiologist reporting.
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="text-align: center; padding: 40px;">
+    <i class="fa-solid fa-eye-slash" style="font-size: 48px; color: var(--text-dim); margin-bottom: 16px;"></i>
+    <h3 style="color: #ffffff; margin-bottom: 8px;">No Grad-CAM Artifacts Available</h3>
+    <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 20px auto;">
+        Grad-CAM requires an uploaded radiograph and a trained model to generate attention heatmaps.
+    </p>
+    <a href="{{ url_for('prediction_page') }}" class="btn btn-primary">
+        <i class="fa-solid fa-upload"></i> Upload & Screen an X-Ray
+    </a>
+</div>
+{% endif %}
+{% endblock %}

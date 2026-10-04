@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Screening History | AI TB Screening{% endblock %}
+{% block header_title %}SQLite Screening History Log{% endblock %}
+
+{% block content %}
+<!-- History Overview Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-title">Total Screenings Logged</div>
+        <div class="stat-value">{{ stats.total_screenings }}</div>
+        <div class="stat-sub">Persisted in SQLite database</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-title">TB Screenings</div>
+        <div class="stat-value" style="color: var(--danger);">{{ stats.tb_screenings }}</div>
+        <div class="stat-sub">Positively flagged cases</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-title">Normal Screenings</div>
+        <div class="stat-value" style="color: var(--success);">{{ stats.normal_screenings }}</div>
+        <div class="stat-sub">Identified healthy radiographs</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-title">Mean TB Confidence</div>
+        <div class="stat-value">{{ stats.avg_tb_confidence }}%</div>
+        <div class="stat-sub">Across all TB-positive inferences</div>
+    </div>
+</div>
+
+<!-- History Log Card -->
+<div class="card">
+    <div class="card-title" style="justify-content: space-between;">
+        <span>
+            <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+            Historical Predictions Table
+        </span>
+
+        {% if history %}
+        <form action="{{ url_for('api_clear_history') }}" method="POST" onsubmit="return confirm('Clear ALL prediction history from the database?');">
+            <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 11px;">
+                <i class="fa-solid fa-trash"></i> Clear All History
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if history %}
+    <div style="overflow-x: auto;">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Date & Time</th>
+                    <th>Image Filename</th>
+                    <th>DL Model</th>
+                    <th>Prediction</th>
+                    <th>TB Prob</th>
+                    <th>Normal Prob</th>
+                    <th>Latency</th>
+                    <th>Artifacts</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td>#{{ item.id }}</td>
+                    <td style="color: var(--text-muted);">{{ item.date }} {{ item.time }}</td>
+                    <td style="font-family: monospace; font-size: 12px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ item.image_filename }}
+                    </td>
+                    <td>{{ item.model_name }}</td>
+                    <td>
+                        {% if item.prediction == 'TB' %}
+                        <span class="badge badge-tb">TB</span>
+                        {% else %}
+                        <span class="badge badge-normal">NORMAL</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #ff7675; font-weight: bold;">{{ item.tb_probability }}%</td>
+                    <td style="color: #00e5a3; font-weight: bold;">{{ item.normal_probability }}%</td>
+                    <td style="color: var(--text-dim); font-size: 11px;">{{ item.execution_time_ms }} ms</td>
+                    <td>
+                        {% if item.gradcam_image %}
+                        <a href="/static/results/{{ item.gradcam_image }}" target="_blank" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+                            <i class="fa-solid fa-eye"></i> Heatmap
+                        </a>
+                        {% else %}
+                        <span style="color: var(--text-dim); font-size: 11px;">None</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="/api/delete-history/{{ item.id }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete record #{{ item.id }}?');">
+                            <button type="submit" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; color: #ff7675;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 30px; text-align: center; color: var(--text-dim);">
+        <i class="fa-solid fa-inbox" style="font-size: 32px; margin-bottom: 12px;"></i>
+        <p>No screening predictions logged yet. Run a prediction to record history in SQLite.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

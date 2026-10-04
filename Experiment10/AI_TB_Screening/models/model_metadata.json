@@ -1,0 +1,22 @@
+{
+    "model_name": "ResNet50",
+    "epochs_completed": 5,
+    "total_requested_epochs": 5,
+    "batch_size": 8,
+    "learning_rate": 0.0001,
+    "training_time_seconds": 156.7,
+    "final_train_accuracy": 0.9706,
+    "final_val_accuracy": 0.5,
+    "final_train_loss": 0.1277,
+    "final_val_loss": 0.812,
+    "final_val_precision": 0.0,
+    "final_val_recall": 0.0,
+    "final_val_auc": 0.5,
+    "train_samples": 34,
+    "val_samples": 8,
+    "test_samples": 8,
+    "total_parameters": 23858305,
+    "hardware": "CPU (x86_64 / Intel / AMD)",
+    "saved_at": "2026-09-27 23:26:37",
+    "training_history_plot": "/static/plots/training_history.png"
+}

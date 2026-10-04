@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI-Based TB Screening{% endblock %} | Deep Learning CAD System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand-section">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-lungs-virus"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>AI TB SCREENING</h2>
+                    <p>Chest X-Ray DL System</p>
+                </div>
+            </div>
+
+            <ul class="nav-links">
+                <li>
+                    <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('dataset_page') }}" class="nav-link {% if request.endpoint == 'dataset_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-folder-open"></i></span>
+                        <span>Dataset</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('preprocessing_page') }}" class="nav-link {% if request.endpoint == 'preprocessing_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-sliders"></i></span>
+                        <span>Preprocessing</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('features_page') }}" class="nav-link {% if request.endpoint == 'features_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-fingerprint"></i></span>
+                        <span>Feature Extraction</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('training_page') }}" class="nav-link {% if request.endpoint == 'training_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-brain"></i></span>
+                        <span>Training</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('evaluation_page') }}" class="nav-link {% if request.endpoint == 'evaluation_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-chart-pie"></i></span>
+                        <span>Evaluation</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('comparison_page') }}" class="nav-link {% if request.endpoint == 'comparison_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-scale-balanced"></i></span>
+                        <span>Model Comparison</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('prediction_page') }}" class="nav-link {% if request.endpoint == 'prediction_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-stethoscope"></i></span>
+                        <span>Prediction</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('explainability_page') }}" class="nav-link {% if request.endpoint == 'explainability_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-eye"></i></span>
+                        <span>Explainable AI</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('history_page') }}" class="nav-link {% if request.endpoint == 'history_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                        <span>History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('about_page') }}" class="nav-link {% if request.endpoint == 'about_page' %}active{% endif %}">
+                        <span class="icon"><i class="fa-solid fa-circle-info"></i></span>
+                        <span>About Project</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div style="margin-bottom: 8px;">
+                    <span class="device-badge">
+                        <i class="fa-solid fa-microchip"></i>
+                        {{ hardware_info.device_type }}: {{ hardware_info.device_name.split('(')[0] }}
+                    </span>
+                </div>
+                <div>TensorFlow {{ hardware_info.tensorflow_version }}</div>
+                <div style="color: #64748b; font-size: 10px; margin-top: 4px;">Python {{ hardware_info.python_version }}</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="page-title">
+                    {% block header_title %}AI TB Screening Dashboard{% endblock %}
+                </div>
+                <div>
+                    {% if model_status.model_available %}
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--success); font-weight: 600;">
+                        <i class="fa-solid fa-circle-check"></i> Model Ready: {{ model_status.metadata.model_name if model_status.metadata else 'EfficientNetB0' }}
+                    </span>
+                    {% else %}
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warning); font-weight: 600;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Model Not Trained Yet
+                    </span>
+                    {% endif %}
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- Medical Disclaimer Alert -->
+                <div class="disclaimer-banner">
+                    <span class="icon"><i class="fa-solid fa-shield-heart"></i></span>
+                    <div>
+                        <strong>Academic Research Prototype Notice:</strong>
+                        {{ disclaimer }}
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }}">
+                          <i class="fa-solid fa-circle-info" style="margin-right: 8px;"></i>
+                          {{ message }}
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <!-- Main Child Template Block -->
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

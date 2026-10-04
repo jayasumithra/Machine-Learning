@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Image Preprocessing | AI TB Screening{% endblock %}
+{% block header_title %}Chest X-Ray Preprocessing & Normalization Pipeline{% endblock %}
+
+{% block content %}
+<!-- Preprocessing Pipeline Theory & Flow -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-gears" style="color: var(--primary);"></i>
+        Standardized Deep Learning Preprocessing Flow
+    </div>
+    <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; font-size: 13px; color: var(--text-muted); line-height: 1.8;">
+        Chest radiographs from diverse clinical scanners exhibit significant variations in dimensions, bit-depths, dynamic range, and tonal contrast.
+        Our preprocessing module transforms heterogeneous raw input radiographs into a mathematically consistent tensor:
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center;">
+            <span class="badge" style="background: #1e293b; color: #ffffff; padding: 6px 12px; font-size: 12px;">Raw Radiograph</span>
+            <span style="color: var(--primary);">&rarr;</span>
+            <span class="badge" style="background: #1e293b; color: #ffffff; padding: 6px 12px; font-size: 12px;">RGB Conversion</span>
+            <span style="color: var(--primary);">&rarr;</span>
+            <span class="badge" style="background: #1e293b; color: #ffffff; padding: 6px 12px; font-size: 12px;">Bicubic / Area Resizing (224×224×3)</span>
+            <span style="color: var(--primary);">&rarr;</span>
+            <span class="badge" style="background: #1e293b; color: #ffffff; padding: 6px 12px; font-size: 12px;">CLAHE Contrast Equalization</span>
+            <span style="color: var(--primary);">&rarr;</span>
+            <span class="badge" style="background: #1e293b; color: #ffffff; padding: 6px 12px; font-size: 12px;">Float32 Normalization [0.0, 1.0]</span>
+            <span style="color: var(--primary);">&rarr;</span>
+            <span class="badge" style="background: rgba(0, 229, 163, 0.2); color: var(--success); padding: 6px 12px; font-size: 12px;">Model Tensor Input</span>
+        </div>
+    </div>
+</div>
+
+<!-- 5-Stage Educational Pipeline Visualization -->
+{% if comparison and comparison.visualization_url %}
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-cubes-stacked" style="color: var(--success);"></i>
+        5-Stage Visual Transformation Pipeline (Generated from Live Code)
+    </div>
+    <div style="text-align: center; margin-bottom: 16px;">
+        <img src="{{ comparison.visualization_url }}" alt="Preprocessing Pipeline Comparison" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-bright);">
+    </div>
+    <div style="font-size: 11.5px; color: var(--text-dim); text-align: center;">
+        *Note: Data Augmentation (random rotation, zoom, horizontal flip) is applied <strong>only</strong> during model training to regularize weights and prevent overfitting. Validation and test sets are never augmented to prevent data leakage.
+    </div>
+</div>
+{% endif %}
+
+<!-- Real Computed Numerical Parameters & Verification -->
+{% if comparison %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Measured Properties Table -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-calculator" style="color: var(--primary);"></i>
+            Actual Computed Image Properties
+        </div>
+        <table class="custom-table">
+            <tbody>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Selected Image</td>
+                    <td style="font-family: monospace; color: #00d2ff;">{{ selected_image }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Original Dimensions</td>
+                    <td>{{ comparison.original_size }} ({{ comparison.original_channels }} Channels)</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Standardized Tensor Shape</td>
+                    <td style="color: var(--success); font-weight: bold;">{{ comparison.processed_size }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Color Conversion</td>
+                    <td>{{ comparison.color_conversion }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Pixel Normalization Range</td>
+                    <td>{{ comparison.normalization_range }} (Float32)</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Raw Pixel Range</td>
+                    <td>Min: {{ comparison.raw_min_pixel }} | Max: {{ comparison.raw_max_pixel }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Raw Mean &plusmn; Std</td>
+                    <td>&mu; = {{ comparison.raw_mean_pixel }}, &sigma; = {{ comparison.raw_std_pixel }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 600;">Normalized Tensor Range</td>
+                    <td style="color: var(--primary);">[{{ comparison.normalized_min }}, {{ comparison.normalized_max }}]</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Test Another Image -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-upload" style="color: var(--warning);"></i>
+            Inspect Another Radiograph
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Upload Custom X-Ray Image</label>
+                <input type="file" name="file" class="form-control" accept=".jpg,.jpeg,.png">
+            </div>
+
+            <div style="text-align: center; margin: 12px 0; color: var(--text-dim); font-size: 12px;">&mdash; OR SELECT FROM DATASET &mdash;</div>
+
+            <div class="form-group">
+                <label class="form-label">Choose Sample from Dataset</label>
+                <select name="sample_image" class="form-select">
+                    {% for s in dataset.normal_samples %}
+                    <option value="Normal/{{ s }}">Normal - {{ s }}</option>
+                    {% endfor %}
+                    {% for s in dataset.tb_samples %}
+                    <option value="TB/{{ s }}">TB - {{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-flask"></i> Run Preprocessing Pipeline
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

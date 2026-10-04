@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}About Project | AI TB Screening{% endblock %}
+{% block header_title %}Academic Project Documentation & Clinical AI Architecture{% endblock %}
+
+{% block content %}
+<!-- Project Abstract -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i>
+        Project Abstract & Executive Overview
+    </div>
+    <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.8;">
+        Tuberculosis (TB), caused by the bacterium <em>Mycobacterium tuberculosis</em>, remains one of the world's deadliest infectious diseases.
+        Chest radiography (X-ray) is the standard high-throughput screening modality endorsed by the World Health Organization (WHO) for early triaging.
+        However, the global shortage of expert radiologists in high-burden regions leads to substantial diagnostic delays.
+        This academic project introduces an end-to-end Computer-Aided Detection (CAD) prototype: 
+        <strong>“AI-Based Tuberculosis (TB) Screening from Chest X-Ray Using Deep Learning”</strong>.
+        The system demonstrates the entire pipeline from raw image ingestion, bilateral lung preprocessing, deep feature extraction, transfer learning with <strong>EfficientNetB0</strong>, empirical test set evaluation, and Explainable AI (Grad-CAM) integrated into a responsive Flask web application.
+    </p>
+</div>
+
+<!-- Architecture & Workflow Diagram -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-diagram-project" style="color: var(--success);"></i>
+        End-to-End System Architecture
+    </div>
+    <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; font-family: monospace; font-size: 12.5px; color: #a29bfe; line-height: 1.9; overflow-x: auto;">
+        [Raw Chest X-Ray Radiograph] (PA/AP View)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        [Image Preprocessor] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Validate Integrity → Convert to RGB → Resize (224×224) → CLAHE Contrast → Normalize [0.0, 1.0]<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        [Deep Feature Extraction] &nbsp;&nbsp;&nbsp;→ EfficientNetB0 Backbone + GlobalAveragePooling2D → 1280-Dimensional Latent Embedding<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        [Transfer Learning Model] &nbsp;&nbsp;&nbsp;&nbsp;→ Batch Normalization → Dropout(0.3) → Dense(128, ReLU) → Dense(1, Sigmoid)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        [Screening Prediction] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ TB Probability (%) vs Normal Probability (%) + Classification Threshold (0.5)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        [Explainable AI (Grad-CAM)] &nbsp;→ GradientTape Gradients on `top_conv` → Spatial Weighting → Jet Heatmap Overlay<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        [Persistence & Audit] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ SQLite Logging (Date, Time, Probabilities, Execution Latency, Overlay Reference)
+    </div>
+</div>
+
+<!-- Technology Stack Details -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
+        Technology Stack & Rationale
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+        <div style="background: #090e19; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Python 3.10 / 3.11</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Standard runtime for numerical computing and modern machine learning pipelines.</div>
+        </div>
+        <div style="background: #090e19; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">TensorFlow & Keras 3</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Deep learning framework providing pre-trained vision backbones and automatic differentiation.</div>
+        </div>
+        <div style="background: #090e19; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">OpenCV & Pillow</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Computer vision libraries for image decoding, CLAHE equalization, resizing, and blending.</div>
+        </div>
+        <div style="background: #090e19; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Scikit-Learn</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Stratified dataset splitting, PCA dimensionality reduction, and clinical confusion/ROC metrics.</div>
+        </div>
+        <div style="background: #090e19; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Flask & SQLite</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Lightweight, responsive WSGI web framework paired with zero-configuration embedded relational storage.</div>
+        </div>
+        <div style="background: #090e19; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Grad-CAM (XAI)</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Gradient-weighted Class Activation Mapping to provide visual explanations of model attention.</div>
+        </div>
+    </div>
+</div>
+
+<!-- College Viva Questions & Answers -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-clipboard-question" style="color: var(--warning);"></i>
+        College Viva Voce Questions & Answers
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px;">
+                Q1: Why use Transfer Learning with EfficientNetB0 rather than training a CNN from scratch?
+            </div>
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+                <strong>Answer:</strong> Medical imaging datasets typically have limited sample sizes compared to massive consumer datasets. Training a deep network from scratch often leads to severe overfitting. EfficientNetB0 is pre-trained on ImageNet (1.4 million images), enabling it to reuse rich low- and mid-level feature representations (edges, textures, contours) via fine-tuning, achieving higher generalization while using far fewer parameters (~4M vs ~25M in ResNet50).
+            </div>
+        </div>
+
+        <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px;">
+                Q2: What is data leakage and how is it prevented in this pipeline?
+            </div>
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+                <strong>Answer:</strong> Data leakage occurs when information from the validation or test sets contaminates the model training process, artificially inflating reported accuracy. In our system, the held-out test set is split <em>before</em> any data augmentation or parameter optimization. Data augmentations (rotations, zooms) are applied exclusively to training batches.
+            </div>
+        </div>
+
+        <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px;">
+                Q3: Why is Recall (Sensitivity) often considered more critical than Accuracy in TB screening?
+            </div>
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+                <strong>Answer:</strong> In infectious disease screening, a False Negative (failing to identify an active TB case) can lead to disease transmission, permanent lung damage, or patient mortality. In contrast, a False Positive results only in a confirmatory secondary test (e.g. GeneXpert or sputum culture). Therefore, high Recall is prioritized to minimize missed infections.
+            </div>
+        </div>
+
+        <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px;">
+                Q4: What are the mathematical mechanics behind Grad-CAM?
+            </div>
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+                <strong>Answer:</strong> Grad-CAM computes the partial derivative \(\frac{\partial y^c}{\partial A^k}\) of the target class score \(y^c\) with respect to each feature map \(A^k\) in the final convolutional layer. These gradients are globally pooled to form importance weights \(\alpha_k^c\). The weighted feature maps are summed and passed through a ReLU function to discard negative activations, highlighting only the spatial regions that positively influenced the prediction.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Limitations & Future Enhancements -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-compass" style="color: var(--success);"></i>
+        Limitations & Future Enhancements
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h5 style="color: #ff7675; margin-bottom: 8px;">System Limitations</h5>
+            <ul style="font-size: 12.5px; color: var(--text-muted); line-height: 1.7; margin-left: 20px;">
+                <li>Binary classification does not differentiate other pulmonary diseases (pneumonia, COVID-19, pleural effusion).</li>
+                <li>Screening model requires standard frontal chest radiographs; lateral views or pediatric radiographs may yield degraded results.</li>
+                <li>Operates purely on 2D radiographic projections without integrating patient clinical symptoms or microbiological data.</li>
+            </ul>
+        </div>
+        <div>
+            <h5 style="color: #00e5a3; margin-bottom: 8px;">Future Enhancements</h5>
+            <ul style="font-size: 12.5px; color: var(--text-muted); line-height: 1.7; margin-left: 20px;">
+                <li>Multi-class pulmonary pathology classification across 14 thoracic disease categories.</li>
+                <li>Integration with DICOM medical imaging servers (PACS) and HL7/FHIR hospital protocols.</li>
+                <li>Vision Transformer (ViT) and Swin Transformer backbone comparisons.</li>
+                <li>Federated Learning for privacy-preserving collaborative model training across multi-center hospital networks.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

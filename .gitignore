@@ -1,0 +1,29 @@
+﻿# ============================================================
+# Machine Learning Lab - Git Ignore
+# ============================================================
+
+# Python virtual environments
+Experiment10/AI_TB_Screening/venv/
+
+# Python cache files
+Experiment10/AI_TB_Screening/**/__pycache__/
+Experiment10/AI_TB_Screening/**/*.pyc
+
+# Local SQLite database
+Experiment10/AI_TB_Screening/database/tb_screening.db
+
+# Large trained model files
+Experiment10/AI_TB_Screening/models/best_model.keras
+Experiment10/AI_TB_Screening/models/ResNet50_model.keras
+Experiment10/AI_TB_Screening/models/EfficientNetB0_model.keras
+
+# Runtime uploaded X-ray images
+Experiment10/AI_TB_Screening/static/uploads/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+
+# Large Experiment 9 dataset
+Experiment9/onlinefraud.csv

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction & Screening | AI TB Screening{% endblock %}
+{% block header_title %}Chest X-Ray TB Screening Inference{% endblock %}
+
+{% block content %}
+<!-- Upload Form & Options -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <!-- Upload Dropzone -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-cloud-arrow-up" style="color: var(--primary);"></i>
+            Upload Chest Radiograph (PA View)
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            <div id="dropzone" class="upload-dropzone">
+                <input type="file" id="xray-file-input" name="file" accept=".jpg,.jpeg,.png" style="display: none;" required>
+                <div class="upload-icon"><i class="fa-solid fa-file-image"></i></div>
+                <h4>Drag & Drop Chest X-Ray Here</h4>
+                <p>or click to browse from local computer</p>
+                <span class="badge" style="background: #1e293b; color: var(--text-muted);">
+                    Supported: JPG, JPEG, PNG (Max 16 MB)
+                </span>
+            </div>
+
+            <!-- Client-side Preview Box -->
+            <div id="preview-container" class="preview-container">
+                <img id="preview-image" src="" alt="Selected Radiograph" class="preview-image">
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                    <span id="file-name-display" style="font-weight: bold; color: #ffffff;"></span>
+                    &bull; <span id="file-size-display"></span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label">Inference Model</label>
+                <select name="model_name" class="form-select">
+                    {% for m in supported_models %}
+                    <option value="{{ m }}" {% if m == 'EfficientNetB0' %}selected{% endif %}>
+                        {{ m }} {% if m == 'EfficientNetB0' %}(Default Active Model){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-stethoscope"></i> Analyze X-Ray & Predict
+            </button>
+        </form>
+    </div>
+
+    <!-- Instructions & Protocol -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-circle-question" style="color: var(--warning);"></i>
+            Clinical Screening Protocol & Instructions
+        </div>
+        <ol style="font-size: 13px; color: var(--text-muted); line-height: 1.8; margin-left: 20px;">
+            <li>Select a standard Posteroanterior (PA) or Anteroposterior (AP) chest radiograph.</li>
+            <li>Ensure the image shows bilateral lung apices down to the costophrenic angles.</li>
+            <li>The system preprocesses the input image by converting to 3-channel RGB, resizing to 224&times;224 pixels, and normalizing to [0, 1].</li>
+            <li>Inference produces an experimental screening probability score.</li>
+            <li>Explainable AI (Grad-CAM) highlights the convolutional feature map regions that drove the model's prediction.</li>
+        </ol>
+
+        <div style="margin-top: 16px; padding: 12px; background: rgba(0, 210, 255, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(0, 210, 255, 0.2); font-size: 12px; color: #70d8ff;">
+            <i class="fa-solid fa-lightbulb" style="margin-right: 6px;"></i>
+            <strong>Demo Tip:</strong> You can select any sample image from <code>dataset/TB/</code> or <code>dataset/Normal/</code> to test the pipeline live!
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Results (Rendered After Upload) -->
+{% if result %}
+<div class="card" style="border: 2px solid {% if result.prediction == 'TB' %}var(--danger){% else %}var(--success){% endif %};">
+    <div class="card-title">
+        <i class="fa-solid fa-square-poll-vertical" style="color: var(--primary);"></i>
+        Screening Result Output
+    </div>
+
+    <!-- Class Result Banner -->
+    <div class="result-badge-box {% if result.prediction == 'TB' %}tb{% else %}normal{% endif %}">
+        <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">
+            SCREENING CLASSIFICATION
+        </div>
+        <div class="result-class">
+            {% if result.prediction == 'TB' %}
+            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 10px;"></i> TUBERCULOSIS (TB) DETECTED
+            {% else %}
+            <i class="fa-solid fa-circle-check" style="margin-right: 10px;"></i> NORMAL / NO TB DETECTED
+            {% endif %}
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: #ffffff;">
+            Confidence: {{ result.confidence }}% &bull; Model: {{ result.model_name }} &bull; Inference Time: {{ result.execution_time_ms }} ms
+        </div>
+    </div>
+
+    <!-- Probability Breakdown Bars -->
+    <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 20px;">
+        <h5 style="color: #ffffff; margin-bottom: 12px;">Model Output Probabilities</h5>
+
+        <div class="probability-bar-wrapper">
+            <div class="prob-header">
+                <span style="color: #ff7675;"><i class="fa-solid fa-circle-dot" style="margin-right: 6px;"></i> Tuberculosis (TB) Probability:</span>
+                <span style="color: #ff7675; font-size: 14px;">{{ result.tb_probability }}%</span>
+            </div>
+            <div class="prob-track">
+                <div class="prob-fill tb" style="width: {{ result.tb_probability }}%;"></div>
+            </div>
+        </div>
+
+        <div class="probability-bar-wrapper">
+            <div class="prob-header">
+                <span style="color: #00e5a3;"><i class="fa-solid fa-circle-dot" style="margin-right: 6px;"></i> Normal (Healthy) Probability:</span>
+                <span style="color: #00e5a3; font-size: 14px;">{{ result.normal_probability }}%</span>
+            </div>
+            <div class="prob-track">
+                <div class="prob-fill normal" style="width: {{ result.normal_probability }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Details & Grad-CAM Button -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+        <div>
+            <h5 style="color: #ffffff; margin-bottom: 8px;">Uploaded Radiograph Information</h5>
+            <table class="custom-table">
+                <tbody>
+                    <tr>
+                        <td style="color: var(--text-muted);">Filename</td>
+                        <td style="font-family: monospace;">{{ result.filename }}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">Dimensions</td>
+                        <td>{{ result.image_info.width }} &times; {{ result.image_info.height }} pixels</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">Channels & Format</td>
+                        <td>{{ result.image_info.channels }} channels ({{ result.image_info.format }})</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">Database Record</td>
+                        <td>Logged as ID #{{ result.id }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: center; padding: 20px; background: #090e19; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <i class="fa-solid fa-eye" style="font-size: 32px; color: var(--primary); margin-bottom: 10px;"></i>
+            <h5 style="color: #ffffff; margin-bottom: 6px;">Explainable AI Analysis</h5>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+                Inspect convolutional gradient activations and anatomical focus heatmaps for this prediction.
+            </p>
+            <a href="{{ url_for('explainability_page') }}" class="btn btn-primary">
+                <i class="fa-solid fa-microscope"></i> View Grad-CAM Explanation
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

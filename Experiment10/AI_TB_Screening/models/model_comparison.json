@@ -1,0 +1,38 @@
+[
+    {
+        "model": "CNN_Baseline",
+        "accuracy": "50.0%",
+        "precision": "0.0%",
+        "recall": "0.0%",
+        "specificity": "100.0%",
+        "f1": "0.0%",
+        "auc": "1.000",
+        "raw_accuracy": 0.5,
+        "raw_auc": 1.0,
+        "test_samples": 8
+    },
+    {
+        "model": "EfficientNetB0",
+        "accuracy": "50.0%",
+        "precision": "0.0%",
+        "recall": "0.0%",
+        "specificity": "100.0%",
+        "f1": "0.0%",
+        "auc": "1.000",
+        "raw_accuracy": 0.5,
+        "raw_auc": 1.0,
+        "test_samples": 8
+    },
+    {
+        "model": "ResNet50",
+        "accuracy": "50.0%",
+        "precision": "0.0%",
+        "recall": "0.0%",
+        "specificity": "100.0%",
+        "f1": "0.0%",
+        "auc": "0.125",
+        "raw_accuracy": 0.5,
+        "raw_auc": 0.125,
+        "test_samples": 8
+    }
+]

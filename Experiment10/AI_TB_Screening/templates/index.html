@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | AI-Based TB Screening{% endblock %}
+{% block header_title %}System Overview & Screening Dashboard{% endblock %}
+
+{% block content %}
+<!-- One-Frame Clickable ML Workflow Pipeline -->
+<div class="pipeline-card">
+    <div class="pipeline-header">
+        <div class="pipeline-title">
+            <i class="fa-solid fa-network-wired" style="margin-right: 8px;"></i>
+            AI TB SCREENING PIPELINE WORKFLOW (ONE-FRAME INTERACTIVE)
+        </div>
+        <span style="font-size: 11.5px; color: var(--text-muted);">
+            Click any stage to inspect the live module
+        </span>
+    </div>
+    <div class="pipeline-flow">
+        <!-- 1. Input -->
+        <a href="{{ url_for('dataset_page') }}" class="pipeline-node">
+            <div class="node-icon" style="color: #00d2ff;"><i class="fa-solid fa-folder-tree"></i></div>
+            <div class="node-label">1. Input Dataset</div>
+            <div class="node-desc">{{ dataset.total_images }} Radiographs</div>
+        </a>
+
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- 2. Preprocess -->
+        <a href="{{ url_for('preprocessing_page') }}" class="pipeline-node">
+            <div class="node-icon" style="color: #00e5a3;"><i class="fa-solid fa-sliders"></i></div>
+            <div class="node-label">2. Preprocess</div>
+            <div class="node-desc">RGB, 224x224, CLAHE</div>
+        </a>
+
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- 3. Features -->
+        <a href="{{ url_for('features_page') }}" class="pipeline-node">
+            <div class="node-icon" style="color: #a29bfe;"><i class="fa-solid fa-fingerprint"></i></div>
+            <div class="node-label">3. Deep Features</div>
+            <div class="node-desc">1280D + 2D PCA</div>
+        </a>
+
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- 4. Model Training -->
+        <a href="{{ url_for('training_page') }}" class="pipeline-node">
+            <div class="node-icon" style="color: #fdcb6e;"><i class="fa-solid fa-brain"></i></div>
+            <div class="node-label">4. DL Model</div>
+            <div class="node-desc">EfficientNetB0</div>
+        </a>
+
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- 5. Evaluation -->
+        <a href="{{ url_for('evaluation_page') }}" class="pipeline-node">
+            <div class="node-icon" style="color: #ff7675;"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="node-label">5. Evaluation</div>
+            <div class="node-desc">Confusion & ROC</div>
+        </a>
+
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- 6. Prediction -->
+        <a href="{{ url_for('prediction_page') }}" class="pipeline-node">
+            <div class="node-icon" style="color: #55efc4;"><i class="fa-solid fa-stethoscope"></i></div>
+            <div class="node-label">6. Prediction</div>
+            <div class="node-desc">Grad-CAM XAI</div>
+        </a>
+    </div>
+</div>
+
+<!-- Primary Stats Grid -->
+<div class="stats-grid">
+    <!-- Dataset Images -->
+    <div class="stat-card">
+        <div class="stat-title">Total Chest X-Rays</div>
+        <div class="stat-value">{{ dataset.total_images }}</div>
+        <div class="stat-sub">
+            <span style="color: #ff7675; font-weight: bold;">{{ dataset.tb_count }} TB</span> &bull; 
+            <span style="color: #00e5a3; font-weight: bold;">{{ dataset.normal_count }} Normal</span>
+        </div>
+    </div>
+
+    <!-- Active Model -->
+    <div class="stat-card success">
+        <div class="stat-title">Active DL Model</div>
+        <div class="stat-value" style="font-size: 20px; line-height: 1.3;">
+            {{ model_status.metadata.model_name if model_status.metadata else 'EfficientNetB0' }}
+        </div>
+        <div class="stat-sub">
+            Parameters: {{ "{:,}".format(model_status.metadata.total_parameters) if model_status.metadata else 'N/A' }}
+        </div>
+    </div>
+
+    <!-- Test Accuracy -->
+    <div class="stat-card">
+        <div class="stat-title">Held-out Test Accuracy</div>
+        <div class="stat-value" style="color: var(--primary);">
+            {{ "{:.1%}".format(model_status.evaluation.accuracy) if model_status.evaluation else 'N/A' }}
+        </div>
+        <div class="stat-sub">
+            ROC-AUC: {{ "{:.3f}".format(model_status.evaluation.roc_auc) if model_status.evaluation else 'N/A' }}
+        </div>
+    </div>
+
+    <!-- Total Screenings Run -->
+    <div class="stat-card warning">
+        <div class="stat-title">Inferences Recorded</div>
+        <div class="stat-value">{{ db_stats.total_screenings }}</div>
+        <div class="stat-sub">
+            Logged in SQLite Database
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Detail Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <!-- Model Clinical Performance Summary -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-gauge-high" style="color: var(--primary);"></i>
+            Current Model Performance Metrics
+        </div>
+
+        {% if model_status.evaluation %}
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;">
+            <div style="background: #0d1627; padding: 14px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border-color);">
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">PRECISION</div>
+                <div style="font-size: 20px; font-weight: 800; color: #00d2ff; margin-top: 4px;">
+                    {{ "{:.1%}".format(model_status.evaluation.precision) }}
+                </div>
+            </div>
+            <div style="background: #0d1627; padding: 14px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border-color);">
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">RECALL (SENSITIVITY)</div>
+                <div style="font-size: 20px; font-weight: 800; color: #00e5a3; margin-top: 4px;">
+                    {{ "{:.1%}".format(model_status.evaluation.recall) }}
+                </div>
+            </div>
+            <div style="background: #0d1627; padding: 14px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border-color);">
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">SPECIFICITY</div>
+                <div style="font-size: 20px; font-weight: 800; color: #fdcb6e; margin-top: 4px;">
+                    {{ "{:.1%}".format(model_status.evaluation.specificity) }}
+                </div>
+            </div>
+            <div style="background: #0d1627; padding: 14px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border-color);">
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">F1-SCORE</div>
+                <div style="font-size: 20px; font-weight: 800; color: #ff7675; margin-top: 4px;">
+                    {{ "{:.1%}".format(model_status.evaluation.f1_score) }}
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: right;">
+            <a href="{{ url_for('evaluation_page') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-chart-pie"></i> View Full Evaluation (Confusion Matrix & ROC)
+            </a>
+        </div>
+        {% else %}
+        <div style="padding: 30px; text-align: center; background: #0d1627; border-radius: var(--radius-sm);">
+            <i class="fa-solid fa-clock" style="font-size: 32px; color: var(--text-dim); margin-bottom: 12px;"></i>
+            <h4 style="color: #ffffff; margin-bottom: 6px;">No Evaluation Metrics Available</h4>
+            <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">
+                Train the model and run evaluation on the test dataset to compute real metrics.
+            </p>
+            <a href="{{ url_for('training_page') }}" class="btn btn-primary">
+                <i class="fa-solid fa-play"></i> Start Model Training
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-bolt" style="color: var(--warning);"></i>
+            Quick Demonstration
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{{ url_for('prediction_page') }}" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-upload"></i> Upload & Screen X-Ray
+            </a>
+            <a href="{{ url_for('training_page') }}" class="btn btn-secondary" style="width: 100%;">
+                <i class="fa-solid fa-dumbbell"></i> Model Training Interface
+            </a>
+            <a href="{{ url_for('explainability_page') }}" class="btn btn-secondary" style="width: 100%;">
+                <i class="fa-solid fa-eye"></i> Grad-CAM Visualizer
+            </a>
+            <a href="{{ url_for('history_page') }}" class="btn btn-secondary" style="width: 100%;">
+                <i class="fa-solid fa-database"></i> SQLite Screening Log
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Predictions Table -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-history" style="color: var(--primary);"></i>
+        Recent Screening Predictions
+    </div>
+
+    {% if history %}
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date & Time</th>
+                <th>File Name</th>
+                <th>Model</th>
+                <th>Prediction</th>
+                <th>TB Probability</th>
+                <th>Normal Probability</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in history %}
+            <tr>
+                <td>#{{ item.id }}</td>
+                <td>{{ item.date }} {{ item.time }}</td>
+                <td style="font-family: monospace; font-size: 12px;">{{ item.image_filename }}</td>
+                <td>{{ item.model_name }}</td>
+                <td>
+                    {% if item.prediction == 'TB' %}
+                    <span class="badge badge-tb">TB POSITIVE</span>
+                    {% else %}
+                    <span class="badge badge-normal">NORMAL</span>
+                    {% endif %}
+                </td>
+                <td style="color: #ff7675; font-weight: 700;">{{ item.tb_probability }}%</td>
+                <td style="color: #00e5a3; font-weight: 700;">{{ item.normal_probability }}%</td>
+                <td>
+                    {% if item.gradcam_image %}
+                    <a href="/static/results/{{ item.gradcam_image }}" target="_blank" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+                        <i class="fa-solid fa-eye"></i> Grad-CAM
+                    </a>
+                    {% else %}
+                    <span style="color: var(--text-dim); font-size: 11px;">N/A</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 20px; text-align: center; color: var(--text-dim); font-size: 13px;">
+        No screening predictions recorded yet. Upload an X-ray to perform screening.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

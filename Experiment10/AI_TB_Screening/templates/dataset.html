@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset Explorer | AI TB Screening{% endblock %}
+{% block header_title %}Chest X-Ray Dataset Management & Distribution{% endblock %}
+
+{% block content %}
+<!-- Top KPI Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-title">Total Chest X-Rays</div>
+        <div class="stat-value">{{ dataset.total_images }}</div>
+        <div class="stat-sub">Valid formats: {{ dataset.valid_formats | join(', ') | upper }}</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-title">Tuberculosis (TB) Samples</div>
+        <div class="stat-value" style="color: var(--danger);">{{ dataset.tb_count }}</div>
+        <div class="stat-sub">{{ dataset.tb_percentage }}% of entire dataset</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-title">Normal / Healthy Samples</div>
+        <div class="stat-value" style="color: var(--success);">{{ dataset.normal_count }}</div>
+        <div class="stat-sub">{{ dataset.normal_percentage }}% of entire dataset</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-title">Stratified Splitting</div>
+        <div class="stat-value" style="font-size: 20px;">70% / 15% / 15%</div>
+        <div class="stat-sub">Train / Validation / Test (No Leakage)</div>
+    </div>
+</div>
+
+<!-- Class Balance Visual Chart -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-chart-column" style="color: var(--primary);"></i>
+        Class Distribution Analysis
+    </div>
+
+    {% if dataset.total_images > 0 %}
+    <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 6px;">
+            <span style="color: #ff7675;">Tuberculosis (TB): {{ dataset.tb_count }} images</span>
+            <span style="color: #ff7675;">{{ dataset.tb_percentage }}%</span>
+        </div>
+        <div style="height: 14px; background: #0d1627; border-radius: 7px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 16px;">
+            <div style="width: {{ dataset.tb_percentage }}%; height: 100%; background: linear-gradient(90deg, #ff7675, var(--danger)); border-radius: 7px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 6px;">
+            <span style="color: #00e5a3;">Normal: {{ dataset.normal_count }} images</span>
+            <span style="color: #00e5a3;">{{ dataset.normal_percentage }}%</span>
+        </div>
+        <div style="height: 14px; background: #0d1627; border-radius: 7px; overflow: hidden; border: 1px solid var(--border-color);">
+            <div style="width: {{ dataset.normal_percentage }}%; height: 100%; background: linear-gradient(90deg, #55efc4, var(--success)); border-radius: 7px;"></div>
+        </div>
+    </div>
+    {% else %}
+    <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+        No chest X-ray images found in <code>dataset/TB/</code> or <code>dataset/Normal/</code>.
+    </div>
+    {% endif %}
+
+    <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button id="btn-generate-dataset" onclick="triggerGenerateStarterDataset(25)" class="btn btn-secondary">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate / Reset Starter Dataset (25 per class)
+        </button>
+        <a href="{{ url_for('dataset_page') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Scan
+        </a>
+    </div>
+</div>
+
+<!-- Dataset Directory Guide -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-folder-tree" style="color: var(--warning);"></i>
+        Dataset Configuration & Placement Instructions
+    </div>
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+        The system dynamically scans the local dataset repository configured in <code>config.py</code>.
+        To use public medical databases (such as Kaggle's Tuberculosis Chest X-ray Database or NIH ChestX-ray14),
+        place your images directly into the designated subfolders:
+    </p>
+    <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; font-family: monospace; font-size: 12.5px; color: #a29bfe; margin-bottom: 14px;">
+        dataset/<br>
+        ├── TB/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ [Place positive tuberculosis chest radiographs (.jpg, .jpeg, .png)]<br>
+        └── Normal/ → [Place healthy control chest radiographs (.jpg, .jpeg, .png)]
+    </div>
+    <div style="font-size: 12px; color: var(--text-dim);">
+        <i class="fa-solid fa-circle-check" style="color: var(--success); margin-right: 4px;"></i>
+        Current configured dataset path: <code>{{ dataset.dataset_path }}</code>
+    </div>
+</div>
+
+<!-- Sample Image Gallery -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Normal Samples -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-check" style="color: var(--success);"></i>
+            Normal Chest Radiographs (Samples)
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            {% for sample in dataset.normal_samples %}
+            <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; text-align: center;">
+                <img src="/dataset-images/Normal/{{ sample }}" alt="{{ sample }}" style="width: 100%; height: 95px; object-fit: cover; border-radius: 4px;" onerror="this.src='/static/results/preprocessing_comparison.png'">
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ sample }}
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-dim); font-size: 12px;">
+                No Normal samples found.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TB Samples -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
+            Tuberculosis Chest Radiographs (Samples)
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            {% for sample in dataset.tb_samples %}
+            <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; text-align: center;">
+                <img src="/dataset-images/TB/{{ sample }}" alt="{{ sample }}" style="width: 100%; height: 95px; object-fit: cover; border-radius: 4px;" onerror="this.src='/static/results/preprocessing_comparison.png'">
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ sample }}
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-dim); font-size: 12px;">
+                No TB samples found.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

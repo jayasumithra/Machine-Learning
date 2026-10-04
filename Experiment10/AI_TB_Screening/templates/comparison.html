@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Model Comparison | AI TB Screening{% endblock %}
+{% block header_title %}Comparative Multi-Architecture Performance Ledger{% endblock %}
+
+{% block content %}
+<!-- Architectural Overview Card -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-scale-balanced" style="color: var(--primary);"></i>
+        Empirical Architecture Comparison (Real Experimental Evaluation)
+    </div>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 16px;">
+        To determine the most viable architecture for resource-constrained clinical screening, we compare a lightweight custom ConvNet baseline with modern transfer-learning backbones (ResNet50 and EfficientNetB0).
+        All models are benchmarked under identical test partitions without data leakage.
+    </p>
+
+    {% if comparison %}
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Model Architecture</th>
+                <th>Test Accuracy</th>
+                <th>Precision</th>
+                <th>Recall (Sensitivity)</th>
+                <th>Specificity</th>
+                <th>F1-Score</th>
+                <th>ROC-AUC</th>
+                <th>Test Samples</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in comparison %}
+            <tr>
+                <td>
+                    <strong style="color: #ffffff;">{{ item.model }}</strong>
+                    {% if item.model == 'EfficientNetB0' %}
+                    <span class="badge" style="background: rgba(0, 210, 255, 0.2); color: #00d2ff; margin-left: 6px;">Primary</span>
+                    {% endif %}
+                </td>
+                <td style="font-weight: bold; color: var(--primary);">{{ item.accuracy }}</td>
+                <td style="color: #00e5a3;">{{ item.precision }}</td>
+                <td style="color: #fdcb6e;">{{ item.recall }}</td>
+                <td style="color: #a29bfe;">{{ item.specificity }}</td>
+                <td style="color: #ff7675;">{{ item.f1 }}</td>
+                <td style="font-weight: bold; color: #ffffff;">{{ item.auc }}</td>
+                <td style="color: var(--text-dim);">{{ item.test_samples }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 24px; text-align: center; color: var(--text-dim);">
+        No models recorded in the comparison ledger yet. Train models in the Training section to populate this table.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Architecture Trade-Off Analysis -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+    <!-- CNN Baseline -->
+    <div class="card" style="border-top: 3px solid #a29bfe;">
+        <h4 style="color: #ffffff; margin-bottom: 8px;">1. CNN Baseline</h4>
+        <div style="font-size: 11px; color: #a29bfe; font-weight: 700; margin-bottom: 12px;">CUSTOM 4-BLOCK CONVNET</div>
+        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+            A simple sequential convolutional network built from scratch. Ideal as an experimental baseline to prove that transfer learning yields superior feature generalization over randomly initialized weights on small datasets.
+        </p>
+    </div>
+
+    <!-- EfficientNetB0 -->
+    <div class="card" style="border-top: 3px solid var(--primary);">
+        <h4 style="color: #ffffff; margin-bottom: 8px;">2. EfficientNetB0</h4>
+        <div style="font-size: 11px; color: var(--primary); font-weight: 700; margin-bottom: 12px;">COMPOUND SCALED BACKBONE (RECOMMENDED)</div>
+        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+            Balances depth, width, and resolution using inverted bottleneck residual blocks (MBConv) and Squeeze-and-Excitation attention. Delivers top-tier accuracy while maintaining small model weight size (~16MB) and fast CPU inference.
+        </p>
+    </div>
+
+    <!-- ResNet50 -->
+    <div class="card" style="border-top: 3px solid var(--success);">
+        <h4 style="color: #ffffff; margin-bottom: 8px;">3. ResNet50</h4>
+        <div style="font-size: 11px; color: var(--success); font-weight: 700; margin-bottom: 12px;">DEEP RESIDUAL NETWORK</div>
+        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+            Uses identity skip connections to solve the vanishing gradient problem across 50 layers. Extremely robust on large medical corpuses, with higher parameter capacity (~25M parameters) and slightly higher compute requirements.
+        </p>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h5 style="color: #ffffff; margin-bottom: 4px;">Train Additional Architectures</h5>
+            <p style="font-size: 12px; color: var(--text-muted);">
+                Select an architecture in the Training module to train and evaluate it on the test set.
+            </p>
+        </div>
+        <a href="{{ url_for('training_page') }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Go to Training Page
+        </a>
+    </div>
+</div>
+{% endblock %}

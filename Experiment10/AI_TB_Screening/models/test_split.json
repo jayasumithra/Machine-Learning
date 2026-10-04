@@ -1,0 +1,25 @@
+{
+    "test_paths": [
+        "D:\\AI_TB_Screening\\dataset\\Normal\\Normal_0015.jpg",
+        "D:\\AI_TB_Screening\\dataset\\Normal\\Normal_0020.jpg",
+        "D:\\AI_TB_Screening\\dataset\\TB\\TB_0025.jpg",
+        "D:\\AI_TB_Screening\\dataset\\Normal\\Normal_0011.jpg",
+        "D:\\AI_TB_Screening\\dataset\\TB\\TB_0017.jpg",
+        "D:\\AI_TB_Screening\\dataset\\TB\\TB_0022.jpg",
+        "D:\\AI_TB_Screening\\dataset\\TB\\TB_0012.jpg",
+        "D:\\AI_TB_Screening\\dataset\\Normal\\Normal_0007.jpg"
+    ],
+    "test_labels": [
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+    ],
+    "total_test": 8,
+    "test_tb_count": 4,
+    "test_normal_count": 4
+}

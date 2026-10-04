@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluation | AI TB Screening{% endblock %}
+{% block header_title %}Clinical Performance Evaluation on Held-Out Test Data{% endblock %}
+
+{% block content %}
+<!-- Top Evaluation Metrics KPI Grid -->
+{% if evaluation %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-title">Test Classification Accuracy</div>
+        <div class="stat-value" style="color: var(--primary);">{{ "{:.1%}".format(evaluation.accuracy) }}</div>
+        <div class="stat-sub">Evaluated on {{ evaluation.total_test_samples }} unseen test radiographs</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-title">Sensitivity / Recall (TB Detection)</div>
+        <div class="stat-value" style="color: var(--success);">{{ "{:.1%}".format(evaluation.recall) }}</div>
+        <div class="stat-sub">TP / (TP + FN) - True Positive Rate</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-title">Specificity (Healthy Rule-Out)</div>
+        <div class="stat-value" style="color: var(--warning);">{{ "{:.1%}".format(evaluation.specificity) }}</div>
+        <div class="stat-sub">TN / (TN + FP) - True Negative Rate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-title">ROC Area Under Curve (AUC)</div>
+        <div class="stat-value" style="color: #a29bfe;">{{ "{:.3f}".format(evaluation.roc_auc) }}</div>
+        <div class="stat-sub">Diagnostic discrimination threshold metric</div>
+    </div>
+</div>
+
+<!-- Confusion Matrix & ROC Curve Side by Side -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Confusion Matrix Card -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-table-cells" style="color: var(--primary);"></i>
+            Confusion Matrix (Ground Truth vs Model Prediction)
+        </div>
+        <div style="text-align: center; margin-bottom: 16px;">
+            <img src="{{ evaluation.confusion_matrix_plot }}?t={{ range(1, 10000) | random }}" alt="Confusion Matrix" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-bright);">
+        </div>
+        <!-- Matrix Breakdown Table -->
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Metric Component</th>
+                    <th>Count</th>
+                    <th>Screening Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong style="color: #00e5a3;">True Negatives (TN)</strong></td>
+                    <td style="font-weight: bold;">{{ evaluation.tn }}</td>
+                    <td style="color: var(--text-muted);">Correctly identified healthy controls</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #ff7675;">False Positives (FP)</strong></td>
+                    <td style="font-weight: bold;">{{ evaluation.fp }}</td>
+                    <td style="color: var(--text-muted);">Normal misclassified as TB (Type I Error)</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #fdcb6e;">False Negatives (FN)</strong></td>
+                    <td style="font-weight: bold;">{{ evaluation.fn }}</td>
+                    <td style="color: var(--text-muted);">TB cases missed by model (Type II Error)</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #00d2ff;">True Positives (TP)</strong></td>
+                    <td style="font-weight: bold;">{{ evaluation.tp }}</td>
+                    <td style="color: var(--text-muted);">Correctly identified tuberculosis cases</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ROC Curve & Bar Metrics -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-bezier-curve" style="color: var(--success);"></i>
+            Receiver Operating Characteristic (ROC Curve)
+        </div>
+        <div style="text-align: center; margin-bottom: 16px;">
+            <img src="{{ evaluation.roc_curve_plot }}?t={{ range(1, 10000) | random }}" alt="ROC Curve" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-bright);">
+        </div>
+        <div style="text-align: center; margin-bottom: 16px;">
+            <img src="{{ evaluation.metrics_bar_plot }}?t={{ range(1, 10000) | random }}" alt="Metrics Bar Chart" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-bright);">
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Controls -->
+<div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h5 style="color: #ffffff; margin-bottom: 4px;">Re-run Evaluation on Test Split</h5>
+        <p style="font-size: 12px; color: var(--text-muted);">
+            Evaluates <code>{{ evaluation.model_file }}</code> on the held-out test split ({{ evaluation.total_test_samples }} samples).
+        </p>
+    </div>
+    <form action="/api/run-evaluation" method="POST" onsubmit="return confirm('Execute evaluation across the test set?');">
+        <button type="submit" class="btn btn-secondary">
+            <i class="fa-solid fa-arrows-rotate"></i> Re-Calculate Test Metrics
+        </button>
+    </form>
+</div>
+
+{% else %}
+<div class="card" style="text-align: center; padding: 40px;">
+    <i class="fa-solid fa-chart-pie" style="font-size: 48px; color: var(--text-dim); margin-bottom: 16px;"></i>
+    <h3 style="color: #ffffff; margin-bottom: 8px;">No Evaluation Results Found</h3>
+    <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 20px auto;">
+        Evaluation requires a trained model and unseen test images. Train a model first or trigger evaluation on the existing model.
+    </p>
+    <a href="{{ url_for('training_page') }}" class="btn btn-primary">
+        <i class="fa-solid fa-play"></i> Train Model First
+    </a>
+</div>
+{% endif %}
+{% endblock %}

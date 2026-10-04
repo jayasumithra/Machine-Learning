@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Model Training | AI TB Screening{% endblock %}
+{% block header_title %}Deep Learning Model Training & Convergence{% endblock %}
+
+{% block content %}
+<!-- Training Configuration & Controls -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Controls Form Card -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-sliders" style="color: var(--primary);"></i>
+            Model & Hyperparameter Configuration
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Select Architecture</label>
+            <select id="train-model-name" class="form-select">
+                {% for m in supported_models %}
+                <option value="{{ m }}" {% if m == 'EfficientNetB0' %}selected{% endif %}>
+                    {{ m }} {% if m == 'EfficientNetB0' %}(Recommended - ImageNet Transfer Learning){% elif m == 'CNN_Baseline' %}(Lightweight 4-Block ConvNet){% elif m == 'ResNet50' %}(Deep Residual Network){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">
+                EfficientNetB0 offers optimal screening performance with high parameter efficiency on CPU/GPU.
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+                <label class="form-label">Training Epochs</label>
+                <input type="number" id="train-epochs" class="form-control" value="5" min="1" max="50">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Batch Size</label>
+                <input type="number" id="train-batch-size" class="form-control" value="8" min="2" max="64">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+                <label class="form-label">Learning Rate (Adam)</label>
+                <input type="number" id="train-lr" class="form-control" value="0.0001" step="0.00005">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Validation Split</label>
+                <input type="number" id="train-val-split" class="form-control" value="0.15" step="0.05" min="0.1" max="0.3">
+            </div>
+        </div>
+
+        <button id="btn-start-training" onclick="triggerTraining()" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+            <i class="fa-solid fa-play"></i> Start Training
+        </button>
+
+        <div style="margin-top: 14px; font-size: 11.5px; color: var(--text-dim);">
+            <i class="fa-solid fa-circle-info" style="color: var(--primary); margin-right: 4px;"></i>
+            Dataset contains <strong>{{ dataset.total_images }}</strong> radiographs ({{ dataset.tb_count }} TB, {{ dataset.normal_count }} Normal).
+        </div>
+    </div>
+
+    <!-- Optimization Safety & Hardware Card -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-shield-halved" style="color: var(--success);"></i>
+            Training Safeguards & Hardware Status
+        </div>
+
+        <div style="background: #090e19; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">
+                <i class="fa-solid fa-microchip" style="color: var(--success); margin-right: 6px;"></i>
+                Detected Compute Accelerator:
+            </div>
+            <div style="font-size: 14px; color: var(--primary); font-weight: bold;">
+                {{ hardware_info.device_name }}
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                TensorFlow {{ hardware_info.tensorflow_version }} &bull; Python {{ hardware_info.python_version }}
+            </div>
+        </div>
+
+        <ul style="font-size: 12.5px; color: var(--text-muted); list-style: none; display: flex; flex-direction: column; gap: 10px;">
+            <li>
+                <i class="fa-solid fa-check" style="color: var(--success); margin-right: 8px;"></i>
+                <strong>EarlyStopping:</strong> Halts training if <code>val_loss</code> fails to improve for 4 consecutive epochs, preventing overfitting.
+            </li>
+            <li>
+                <i class="fa-solid fa-check" style="color: var(--success); margin-right: 8px;"></i>
+                <strong>ModelCheckpoint:</strong> Automatically serializes the best checkpoint weights to <code>models/best_model.keras</code>.
+            </li>
+            <li>
+                <i class="fa-solid fa-check" style="color: var(--success); margin-right: 8px;"></i>
+                <strong>ReduceLROnPlateau:</strong> Decays learning rate by 50% when validation plateaus to fine-tune synaptic weights.
+            </li>
+            <li>
+                <i class="fa-solid fa-check" style="color: var(--success); margin-right: 8px;"></i>
+                <strong>Training-Only Augmentation:</strong> Prevents data leakage by isolating transformations strictly to the training partition.
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Live Training Progress Bar Section (Visible during training) -->
+<div id="training-progress-section" class="card" style="{% if not training_status.is_training %}display: none;{% endif %} border-color: var(--primary);">
+    <div class="card-title" style="justify-content: space-between;">
+        <span>
+            <i class="fa-solid fa-spinner fa-spin" style="color: var(--primary);"></i>
+            Training in Progress: <span id="training-model-display">{{ training_status.model_name }}</span>
+        </span>
+        <span id="training-percent-text" style="color: var(--primary); font-weight: 800;">
+            {{ training_status.progress_percent }}%
+        </span>
+    </div>
+
+    <div class="progress-container">
+        <div id="training-progress-bar" class="progress-bar-active" style="width: {{ training_status.progress_percent }}%;"></div>
+    </div>
+
+    <p id="training-status-message" style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+        {{ training_status.message }}
+    </p>
+
+    <!-- Epoch Telemetry Grid -->
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+        <div style="background: #090e19; padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">EPOCH</div>
+            <div id="stat-curr-epoch" style="font-size: 16px; font-weight: bold; color: #ffffff;">
+                {{ training_status.current_epoch }} / {{ training_status.total_epochs }}
+            </div>
+        </div>
+        <div style="background: #090e19; padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">TRAIN ACC</div>
+            <div id="stat-train-acc" style="font-size: 16px; font-weight: bold; color: #00e5a3;">
+                {{ "{:.1%}".format(training_status.latest_accuracy) if training_status.latest_accuracy is defined else '--' }}
+            </div>
+        </div>
+        <div style="background: #090e19; padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">VAL ACC</div>
+            <div id="stat-val-acc" style="font-size: 16px; font-weight: bold; color: #00d2ff;">
+                {{ "{:.1%}".format(training_status.latest_val_accuracy) if training_status.latest_val_accuracy is defined else '--' }}
+            </div>
+        </div>
+        <div style="background: #090e19; padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">TRAIN LOSS</div>
+            <div id="stat-train-loss" style="font-size: 16px; font-weight: bold; color: #ff7675;">
+                {{ training_status.latest_loss if training_status.latest_loss is defined else '--' }}
+            </div>
+        </div>
+        <div style="background: #090e19; padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">VAL LOSS</div>
+            <div id="stat-val-loss" style="font-size: 16px; font-weight: bold; color: #fdcb6e;">
+                {{ training_status.latest_val_loss if training_status.latest_val_loss is defined else '--' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Model Training Curves -->
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+        Empirical Training Curves (Accuracy & Loss vs Epochs)
+    </div>
+
+    {% if model_status.metadata and model_status.metadata.training_history_plot %}
+    <div style="text-align: center; margin-bottom: 14px;">
+        <img src="{{ model_status.metadata.training_history_plot }}?t={{ range(1, 10000) | random }}" alt="Training Curves" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-bright);">
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+        <span>Trained Model: <strong>{{ model_status.metadata.model_name }}</strong></span>
+        <span>Training Duration: <strong>{{ model_status.metadata.training_time_seconds }}s</strong></span>
+        <span>Total Parameters: <strong>{{ "{:,}".format(model_status.metadata.total_parameters) }}</strong></span>
+        <span>Checkpoint: <code>models/best_model.keras</code></span>
+    </div>
+    {% else %}
+    <div style="padding: 30px; text-align: center; color: var(--text-dim);">
+        <i class="fa-solid fa-chart-line" style="font-size: 32px; margin-bottom: 12px;"></i>
+        <p>No training curves recorded yet. Start training above to generate loss and accuracy curves.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
